@@ -10,6 +10,13 @@ const boardColor = 'blue'
 const player1Color = 'red'
 const player2Color = 'yellow'
 
+class WinChecker {
+  static checkUp = (gameBoard, row, col) => { }
+  static checkRight = (gameBoard, row, col) => { }
+  static checkDiagonal = (gameBoard, row, col) => { }
+}
+
+
 const Square = (props) => {
   return (
     <div style={{
@@ -28,12 +35,15 @@ const Square = (props) => {
           border: "1px solid black",
           "border-radius": '50%',
           "background-color": props.content || '#bab0b0',
+          "box-shadow": "6px 6px 11px -3px rgba(0, 0, 0, 0.45) inset"
         }}
       >
       </div>
     </div >
   );
 }
+
+
 
 const Insert = (props) => {
   return (
