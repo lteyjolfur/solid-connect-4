@@ -1,6 +1,6 @@
 import logo from './logo.svg';
 import styles from './App.module.css';
-import { createSignal, createEffect, For, onCleanup } from "solid-js";
+import { createSignal, createEffect, For, onCleanup, Show } from "solid-js";
 
 const squareSize = '50px';
 const boardWidth = 7;
@@ -10,10 +10,49 @@ const boardColor = 'blue'
 const player1Color = 'red'
 const player2Color = 'yellow'
 
-class WinChecker {
-  static checkUp = (gameBoard, row, col) => { }
-  static checkRight = (gameBoard, row, col) => { }
-  static checkDiagonal = (gameBoard, row, col) => { }
+const winChecker = {
+  winner: null,
+  checkMatch(arr) {
+    const win1 = arr.every(square => square === player1Color)
+    if (win1) {
+      this.winner = player1Color
+      return true
+    }
+    const win2 = arr.every(square => square === player2Color)
+    if (win2) {
+      this.winner = player2Color
+      return true
+    }
+    return false
+
+  },
+  checkMatchBasic(arr) {
+    return arr.every(square => square === player1Color) || arr.every(square => square === player2Color)
+  },
+  checkDown(gameBoard, row, col) {
+    const limit = 3
+    const height = boardHeight - limit
+    const width = boardWidth
+    for (let i = 0; i < height; i++) {
+      const xRows = gameBoard.filter((_, index) => (index >= i && index <= i + limit))
+      for (let j = 0; j < width; j++) {
+        const col = xRows.map((row) => (row.filter((_, index) => index === j))).flatMap((x) => x)
+        const isWin = this.checkMatch(col)
+        if (isWin) {
+          return true
+        }
+      }
+    }
+  },
+  checkRight(gameBoard, row, col) { },
+  checkDiagonal(gameBoard, row, col) { },
+  check(gameBoard) {
+    this.winner = null;
+    this.checkDown(gameBoard);
+    this.checkRight();
+    this.checkDiagonal();
+    return this.winner;
+  }
 }
 
 
@@ -44,10 +83,10 @@ const Square = (props) => {
 }
 
 
-
+// disabled={props.disabled}
 const Insert = (props) => {
   return (
-    <button class={`${styles.Insert} '${styles[turnToColor(props.turn)]} ${turnToColor(props.turn)}`} style={{ width: squareSize, height: squareSize / 2 }}
+    <button class={`${styles.Insert} '${styles[turnToColor(props.turn)]} ${turnToColor(props.turn)}`} disabled={props.disabled} style={{ width: squareSize, height: squareSize / 2 }}
       onClick={[props.clickHandler, props.index]}>
       ⬇
     </button>
@@ -61,6 +100,12 @@ const fillBoard = (color) => Array(boardHeight).fill(Array(boardWidth).fill(colo
 function App() {
   const [gameBoard, setGameBoard] = createSignal(Array(boardHeight).fill(Array(boardWidth).fill(null)));
   const [turn, setTurn] = createSignal(true);
+  const [gameState, setGameState] = createSignal(false)
+
+  // createEffect(() => {
+  //   const result = winChecker.check(gameBoard());
+  //   console.log(result)
+  // });
 
   const handleInsert = (index, event) => {
     const curGameBoard = JSON.parse(JSON.stringify(gameBoard()));
@@ -68,7 +113,13 @@ function App() {
       if (curGameBoard[h][index] === null) {
         curGameBoard[h][index] = turnToColor(turn());
         setGameBoard(curGameBoard);
-        setTurn(!turn());
+        const result = winChecker.check(gameBoard());
+        if (result) {
+          setGameState(true)
+        } else {
+          setTurn(!turn());
+        }
+
         break;
       }
 
@@ -86,7 +137,7 @@ function App() {
     <div class={styles.App}>
       <h1 style={{ color: turnToColor(turn()) }}>Connect 4</h1>
       <For each={[...Array(boardWidth).keys()]}>
-        {(index) => <Insert clickHandler={handleInsert} index={index} turn={turn()} />}
+        {(index) => <Insert clickHandler={handleInsert} index={index} turn={turn()} disabled={gameState()} />}
       </For>
       <div>
         <div class={styles.GameBoard} style={{ display: 'inline-block', overflow: 'hidden', 'border-radius': '12px' }}>
@@ -103,6 +154,9 @@ function App() {
         </div>
       </div>
       <button onClick={restart}>restart</button>
+      <Show when={gameState() === true} >
+        <h2 style={{ color: turnToColor(turn()) }}> {turn()} wins</h2>
+      </Show>
     </div >
   );
 }
